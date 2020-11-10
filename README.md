@@ -18,11 +18,12 @@ if this is portable across distributions, though.
 
 Running `hx`:
 
-	hx filename       # open a file
-	hx -h             # for help
-	hx -v             # version information
-	hx -o 32 filename # open file with 32 octets per line
-	hx -g 8 filename  # open file, set octet grouping to 8
+	hx filename        # open a file
+	hx -h              # for help
+	hx -v              # version information
+	hx -o 32 filename  # open file with 32 octets per line
+	hx -g 8 filename   # open file, set octet grouping to 8
+        hx -t tbl filename # open file with a thingy table from file "tbl"
 
 Keys which can be used:
 
@@ -63,13 +64,14 @@ Keys which can be used:
 Being in normal mode (`ESC`) then hitting the colon key `:`, you can enter command
 mode where manual commands can be typed. The following commands are recognized currently:
 
-* `:123`      : go to offset 123 (base 10)
-* `:0x7a69`   : go to offset 0x7a69 (base 16), 31337 in base 10.
-* `:w`        : writes the file.
-* `:q`        : quits (will warn if the buffer is dirty).
-* `:q!`       : quits promptly without warning.
-* `set o=16`  : sets the amount of octets per line.
-* `set g=8`   : sets grouping of bytes.
+* `:123`        : go to offset 123 (base 10)
+* `:0x7a69`     : go to offset 0x7a69 (base 16), 31337 in base 10.
+* `:w`          : writes the file.
+* `:q`          : quits (will warn if the buffer is dirty).
+* `:q!`         : quits promptly without warning.
+* `set o=16`    : sets the amount of octets per line.
+* `set g=8`     : sets grouping of bytes.
+* `thingy a0=Q` : adds a thingy/substitution (hex value A0 is shown as "Q")
 
 Input is very basic in command mode. Cursor movement is not available (yet?).
 
