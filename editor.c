@@ -367,23 +367,48 @@ void editor_render_ascii(struct editor* e, int rownum, unsigned int start_offset
 			return;
 		}
 
-		cc++;
 
 		char c =  e->contents[offset];
 
-		// If we need to highlight the cursor in the current iteration,
-		// do so by inverting the color (7m). In all other cases, reset (0m).
-		if (rownum == e->cursor_y && cc == e->cursor_x) {
-			charbuf_append(b, "\x1b[7m", 4);
+		int thingy_length = 0;
+		const unsigned char* thingy = NULL;
+		if (e->thingies) {
+			int lk = thingy_table_longest_key(e->thingies);
+
+			for (int i=1; i <= lk; i++) {
+				const unsigned char* v = thingy_table_search(e->thingies,i,
+					(const unsigned char*) e->contents + offset);
+				if (v) { thingy = v; thingy_length = i; }
+			}
+		}
+		
+		cc+= (thingy ? thingy_length : 1);
+
+		bool hilight = false;
+		if (thingy) {
+			hilight = (rownum == e->cursor_y && cc >= e->cursor_x && cc < (e->cursor_x + thingy_length) );
 		} else {
-			charbuf_appendf(b, "\x1b[0m", 4);
+			hilight = (rownum == e->cursor_y && cc == e->cursor_x);
 		}
 
-		// Printable characters use a different color from non-printable characters.
-		if (isprint(c)) {
-			charbuf_appendf(b, "\x1b[33m%c", c);
+		// If we need to highlight the cursor in the current iteration,
+		// do so by inverting the color (7m). In all other cases, reset (0m).
+		if (hilight) {
+			charbuf_append(b, "\x1b[7m", 4);
 		} else {
-			charbuf_append(b, "\x1b[36m.", 6);
+			charbuf_append(b, "\x1b[0m", 4);
+		}
+
+		if (thingy) {
+			charbuf_appendf(b, "\x1b[32m%s", (const char*) thingy);
+			offset += (thingy_length - 1);
+		} else {
+			// Printable characters use a different color from non-printable characters.
+			if (isprint(c)) {
+				charbuf_appendf(b, "\x1b[33m%c", c);
+			} else {
+				charbuf_append(b, "\x1b[36m.", 6);
+			}
 		}
 	}
 	// Clear formatting, erase until the end of the line: \x1b[K
@@ -772,6 +797,22 @@ void editor_process_command(struct editor* e, const char* cmd) {
 	if (strncmp(cmd, "help", INPUT_BUF_SIZE) == 0) {
 		editor_render_help(e);
 		return;
+	}
+
+	if (strncmp(cmd, "thingy", 6) == 0) {
+
+		const char* thingy_def = cmd+6;
+		
+		while (thingy_def[0] == ' ') thingy_def++;
+
+		int r = 0;
+		if ((r = thingy_table_add_from_string(e->thingies, thingy_def)) == 0) {
+			editor_statusmessage(e, STATUS_INFO, "New thingy definition added.");
+		} else {
+			editor_statusmessage(e, STATUS_ERROR, "invalid thingy definition");
+			return;
+		}
+
 	}
 
 	// Check if we want to set an option at runtime. The first three bytes are

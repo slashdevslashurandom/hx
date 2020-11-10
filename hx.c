@@ -54,13 +54,14 @@ static void editor_exit() {
 static void print_help(const char* explanation) {
 	fprintf(stderr,
 	"%s"\
-	"usage: hx [-hv] [-o octets_per_line] [-g grouping_bytes] filename\n"\
+	"usage: hx [-hv] [-o octets_per_line] [-g grouping_bytes] [-t thingy_file] filename\n"\
 	"\n"
 	"Command options:\n"
 	"    -h     Print this cruft and exits\n"
 	"    -v     Version information\n"
 	"    -o     Amount of octets per line\n"
 	"    -g     Grouping of bytes in one line\n"
+	"    -t     Tile containing thingy (substitution) tables\n"
 	"\n"
 	"Currently, both these values are advised to be a multiple of 2\n"
 	"to prevent garbled display :)\n"
@@ -118,11 +119,12 @@ static void resize_term() {
 
 int main(int argc, char* argv[]) {
 	char* file = NULL;
+	char* thingy_filename = NULL;
 	int octets_per_line = 16;
 	int grouping = 4;
 
 	int ch = 0;
-	while ((ch = getopt(argc, argv, "vhg:o:")) != -1) {
+	while ((ch = getopt(argc, argv, "vhg:o:t:")) != -1) {
 		switch (ch) {
 		case 'v':
 			print_version();
@@ -138,6 +140,9 @@ int main(int argc, char* argv[]) {
 		case 'o':
 			// parse octets per line
 			octets_per_line = str2int(optarg, 16, 64, 16);
+			break;
+		case 't':
+			thingy_filename = optarg;
 			break;
 		default:
 			print_help("");
@@ -165,6 +170,12 @@ int main(int argc, char* argv[]) {
 	g_ec = editor_init();
 	g_ec->octets_per_line = octets_per_line;
 	g_ec->grouping = grouping;
+
+	if (thingy_filename) {
+		struct thingy_table* tbl = thingy_table_init();
+		thingy_table_add_from_file(tbl, thingy_filename, NULL);
+		g_ec->thingies = tbl;
+	}
 
 	editor_openfile(g_ec, file);
 

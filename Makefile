@@ -7,7 +7,7 @@ CPPFLAGS += -D__BSD_VISIBLE # SIGWINCH on FreeBSD.
 CFLAGS = -std=c99 -Wall -Wextra -pedantic -O3 -MMD -MP
 LDFLAGS = -O3
 
-objects := hx.o editor.o charbuf.o util.o undo.o
+objects := hx.o editor.o charbuf.o util.o undo.o thingy.o
 
 PREFIX ?= /usr/local
 bindir = /bin

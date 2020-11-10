@@ -8,7 +8,7 @@
 #define HX_EDITOR_H
 
 #include "charbuf.h"
-
+#include "thingy.h"
 #include <stdbool.h>
 
 /*
@@ -75,6 +75,7 @@ struct editor {
 	char searchstr[INPUT_BUF_SIZE]; // the current search string or NULL if none.
 
 	struct action_list* undo_list; // tail of the list
+	struct thingy_table* thingies; // thingy table or NULL if none.
 };
 
 /*
