@@ -25,13 +25,6 @@ struct thingy_table {
 	struct linked_list* mbseqs[256]; //linked list for mb seqs starting with each byte
 };
 
-static unsigned char* strdup(const unsigned char* src) {
-
-	unsigned char* res = malloc(strlen((const char*)src) + 1);
-	if (res) strcpy((char*)res,(const char*)src);
-	return res;
-}
-
 struct thingy_table* thingy_table_init() {
 	struct thingy_table* nt = malloc(sizeof(struct thingy_table));
 	memset(nt, 0, sizeof(struct thingy_table));
@@ -47,12 +40,12 @@ int thingy_table_assign(struct thingy_table* tbl, unsigned char length, const un
 		if (tbl->values[key[0]]) {
 			//key already exists, erase the old one first
 			free(tbl->values[key[0]]);
-			tbl->values[key[0]] = strdup(value);
+			tbl->values[key[0]] = strdup((char*)value);
 			if (tbl->longest_key < length) tbl->longest_key = length;
 			return 0;
 		} else {
 			//key does not exist
-			tbl->values[key[0]] = strdup(value);
+			tbl->values[key[0]] = strdup((char*)value);
 			if (tbl->longest_key < length) tbl->longest_key = length;
 			return 0;
 		}
@@ -69,7 +62,7 @@ int thingy_table_assign(struct thingy_table* tbl, unsigned char length, const un
 				//to replace the value
 
 				free((*curitem)->value);
-				(*curitem)->value = strdup(value);
+				(*curitem)->value = strdup((char*)value);
 				return 0;
 			}
 
@@ -80,8 +73,8 @@ int thingy_table_assign(struct thingy_table* tbl, unsigned char length, const un
 					linked_list));
 
 		newitem->length = length;
-		newitem->key = strdup(key);
-		newitem->value = strdup(value);
+		newitem->key = strdup((char*)key);
+		newitem->value = strdup((char*)value);
 		*curitem = newitem;
 		if (tbl->longest_key < length) tbl->longest_key = length;
 		return 0;
@@ -154,7 +147,7 @@ int thingy_table_delete(struct thingy_table* tbl, unsigned char length, const un
 
 int thingy_table_add_from_string(struct thingy_table* tbl, const char* string) {
 
-	char* sd = (char*)strdup((const unsigned char*)string);
+	char* sd = (char*)strdup(string);
 
 	char* key_hex = strtok(sd,"=");
 	if (!key_hex) {free(sd); return 1;}
@@ -195,7 +188,11 @@ int thingy_table_add_from_string(struct thingy_table* tbl, const char* string) {
 		return 0;
 	} else {
 		value = strtok(NULL,"");
-		if (!value) {free(sd); return 5;}
+		if (!value) { 
+			int r = thingy_table_delete(tbl, keylen, key);
+			free(sd);
+			return 16 + r;
+		}
 		thingy_table_assign(tbl, keylen, (const unsigned char*) key, (const unsigned char*) value);
 		free(sd);
 		return 0;

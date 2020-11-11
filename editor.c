@@ -367,13 +367,15 @@ void editor_render_ascii(struct editor* e, int rownum, unsigned int start_offset
 			return;
 		}
 
-
 		char c =  e->contents[offset];
 
 		int thingy_length = 0;
 		const unsigned char* thingy = NULL;
+		// Our goal: find the longest thingy that corresponds to the current characters
 		if (e->thingies) {
 			int lk = thingy_table_longest_key(e->thingies);
+			//Make sure we don't do out of bounds here, either.
+			if (offset + lk > e->content_length) lk = (e->content_length - offset); 
 
 			for (int i=1; i <= lk; i++) {
 				const unsigned char* v = thingy_table_search(e->thingies,i,
@@ -400,12 +402,18 @@ void editor_render_ascii(struct editor* e, int rownum, unsigned int start_offset
 		}
 
 		if (thingy) {
-			charbuf_appendf(b, "\x1b[32m%s", (const char*) thingy);
+
+			if ((int)((offset + thingy_length) - start_offset) > (e->octets_per_line)) {
+				charbuf_appendf(b, "\x1b[33m%s", (const char*) thingy);
+				//the different color indicates that the thingy goes past this line
+			} else {
+				charbuf_appendf(b, "\x1b[32m%s", (const char*) thingy);
+			}
 			offset += (thingy_length - 1);
 		} else {
 			// Printable characters use a different color from non-printable characters.
 			if (isprint(c)) {
-				charbuf_appendf(b, "\x1b[33m%c", c);
+				charbuf_appendf(b, "\x1b[37m%c", c);
 			} else {
 				charbuf_append(b, "\x1b[36m.", 6);
 			}
@@ -788,6 +796,11 @@ void editor_process_command(struct editor* e, const char* cmd) {
 			exit(0);
 		}
 	}
+	
+	if (strncmp(cmd, "wq", INPUT_BUF_SIZE) == 0) {
+		editor_writefile(e);
+		exit(0);
+	}
 
 	if (strncmp(cmd, "q!", INPUT_BUF_SIZE) == 0) {
 		exit(0);
@@ -805,16 +818,19 @@ void editor_process_command(struct editor* e, const char* cmd) {
 		
 		while (thingy_def[0] == ' ') thingy_def++;
 
-		int r = 0;
-		if ((r = thingy_table_add_from_string(e->thingies, thingy_def)) == 0) {
-			editor_statusmessage(e, STATUS_INFO, "New thingy definition added.");
-		} else {
+		int r = thingy_table_add_from_string(e->thingies, thingy_def);
+		if (r > 16) {
+			editor_statusmessage(e, STATUS_ERROR, "unable to delete this key");
+		} else if (r == 16) {
+			editor_statusmessage(e, STATUS_INFO, "Thingy definition deleted.");
+		} else if (r != 0) {
 			editor_statusmessage(e, STATUS_ERROR, "invalid thingy definition");
-			return;
+		} else {
+			editor_statusmessage(e, STATUS_INFO, "New thingy definition added.");
 		}
-
+		return;
 	}
-
+	
 	// Check if we want to set an option at runtime. The first three bytes are
 	// checked first, then the rest is parsed.
 	if (strncmp(cmd, "set", 3) == 0) {
