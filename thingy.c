@@ -202,7 +202,7 @@ int thingy_table_add_from_string(struct thingy_table* tbl, const char* string) {
 int thingy_table_add_from_file(struct thingy_table* tbl, const char* filename, int* o_thingies_loaded) {
 
 	FILE* file = fopen(filename,"r");
-	if (!filename) { perror("Unable to open thingy table file"); return 1; }
+	if (!file) { perror("Unable to open thingy table file"); return 1; }
 
 	char buf[1024];
 
